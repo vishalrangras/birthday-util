@@ -3,8 +3,10 @@ package com.coe.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,24 +39,31 @@ import com.coe.model.User;
 
 public class Utility {
 
-	public static SimpleDateFormat sdf;
-	public static File file;
+	public  SimpleDateFormat sdf;
+	public  File file;
 
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
-
+		Utility utility = new Utility();
 		if (args.length == 2) {
 			try {
-				sdf = new SimpleDateFormat(args[0]);
-				file = new File(args[1]);
+				utility.sdf = new SimpleDateFormat(args[0]);
+				utility.file = new File(args[1]);
 			} catch (Exception e) {
 				System.out.println("Incorrect parameters!!!");
 				System.out.println("arg[0]: Simple Date Format");
 				System.out.println("arg[1]: Absolute File Path");
 			}
-		} else {
-			sdf = new SimpleDateFormat("MM-dd-yyyy");
-			file = new File("c:/data/birthdays.xls");
+		}else if(args.length==1 || args.length>2){
+			System.out.println("Incorrect parameters!!!");
+			System.out.println("arg[0]: Simple Date Format");
+			System.out.println("arg[1]: Absolute File Path");
+		}else if (args.length==0){
+			System.out.println("No arguments passed. Using default parameters as follows:");
+			System.out.println("arg[0]: Simple Data Format = MM-dd-yyyy");
+			System.out.println("arg[1]: Absolute File Path = c:/data/birthdays.xls");
+			utility.sdf = new SimpleDateFormat("MM-dd-yyyy");
+			utility.file = new File("c:/data/birthdays.xls");
 		}
 
 		InputStream inputStream = null;
@@ -62,7 +71,7 @@ public class Utility {
 		List<User> userList = new ArrayList<User>();
 
 		try {
-			inputStream = new FileInputStream(file);
+			inputStream = new FileInputStream(utility.file);
 			myWorkBook = new HSSFWorkbook(inputStream);
 			Sheet mySheet = myWorkBook.getSheetAt(0);
 
@@ -83,7 +92,7 @@ public class Utility {
 					continue;
 				}
 				Calendar birthdate = Calendar.getInstance();
-				birthdate.setTime(sdf.parse(myCell.getStringCellValue()));
+				birthdate.setTime(utility.sdf.parse(myCell.getStringCellValue()));
 
 				if (today.get(Calendar.MONTH) == birthdate.get(Calendar.MONTH)
 						&& today.get(Calendar.DATE) == birthdate.get(Calendar.DATE)) {
@@ -100,7 +109,7 @@ public class Utility {
 					if (myCell == null || myCell.getStringCellValue().equals("")) {
 						continue;
 					}
-					user.setBirthday(sdf.parse(myCell.getStringCellValue()));
+					user.setBirthday(utility.sdf.parse(myCell.getStringCellValue()));
 
 					myCell = myRow.getCell(3, MissingCellPolicy.RETURN_BLANK_AS_NULL);
 					if (myCell == null || myCell.getStringCellValue().equals("")) {
@@ -127,7 +136,7 @@ public class Utility {
 		for (User user : userList) {
 			System.out.println(user);
 			try {
-				sendEmail(user);
+				utility.sendEmail(user);
 			} catch (MessagingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -136,10 +145,10 @@ public class Utility {
 
 	}
 
-	public static void sendEmail(User user) throws MessagingException, IOException {
+	public void sendEmail(User user) throws MessagingException, IOException {
 
-		final String userName = "vishalrangrasconsult@gmail.com";
-		final String password = "Neilparker@91";
+		final String userName = "user@gmail.com";
+		final String password = "password";
 
 		// sets SMTP server properties
 		Properties properties = new Properties();
@@ -182,13 +191,36 @@ public class Utility {
 
 		// Image part
 		MimeBodyPart imagePart = new MimeBodyPart();
-		imagePart.attachFile("resources/logo.jpg");
+		//imagePart.attachFile("resources/logo.jpg");
+		
+		InputStream logoStream = getClass().getClassLoader().getResource("resource/logo.jpg").openStream();
+		byte[] buffer = new byte[logoStream.available()];
+		logoStream.read(buffer);
+		
+		File targetFile = new File("logo.jpg");
+	    OutputStream outStream = new FileOutputStream(targetFile);
+	    outStream.write(buffer);
+		outStream.close();
+		imagePart.attachFile("logo.jpg");
+		
 		imagePart.setContentID("<" + cid1 + ">");
 		imagePart.setDisposition(MimeBodyPart.INLINE);
 		multipart.addBodyPart(imagePart);
 
 		MimeBodyPart imagePart2 = new MimeBodyPart();
-		imagePart2.attachFile("resources/greeting.jpg");
+		//imagePart2.attachFile("resources/greeting.jpg");
+		
+		InputStream greetingStream = getClass().getClassLoader().getResource("resource/greeting.jpg").openStream();
+		byte[] buffer2 = new byte[greetingStream.available()];
+		greetingStream.read(buffer2);
+		
+		File targetFile2 = new File("greeting.jpg");
+	    OutputStream outStream2 = new FileOutputStream(targetFile2);
+	    outStream2.write(buffer2);
+		outStream2.close();
+		imagePart2.attachFile("greeting.jpg");
+
+		
 		imagePart2.setContentID("<" + cid2 + ">");
 		imagePart2.setDisposition(MimeBodyPart.INLINE);
 		multipart.addBodyPart(imagePart2);
@@ -201,7 +233,7 @@ public class Utility {
 
 	}
 
-	private static String getTemplate(String cid1, String cid2) {
+	private  String getTemplate(String cid1, String cid2) {
 		return "<style>.logo{	float:right;}.content{	text-align: center;	color:#ff471a;	clear: both;	margin: auto;"
 				+ "font-size: 26px;}.heading{	text-align: left;	color:#ff471a;	clear: both;	margin: auto;"
 				+ "font-size: 30px;}.greeting{	display: block;" + "margin: auto;}</style><img src=\"cid:" + cid1
